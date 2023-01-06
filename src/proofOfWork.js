@@ -1,20 +1,42 @@
 const sha256 = require('crypto-js/sha256')
 class Block {
     constructor(data, previousHash) {
-        this.data = data || 'please fill in data'
-        this.previousHash = previousHash || null
-        this.hash = this.computedHash()
+      this.data = data || 'please fill in data'
+      this.previousHash = previousHash || null
+      this.hash = this.computedHash()
+      this.nonce = 1
     }
 
-    
     computedHash() {
-        return sha256(this.data + this.previousHash).toString()
+      return sha256(this.data + this.previousHash + this.nonce).toString()
+    }
+
+    getAnswer(difficulty) {
+      let answer = ''
+      for (let index = 0; index < difficulty; index++) {
+        answer+='0'
+      }
+      return answer
+    }
+
+    // 根据难度来计算hash
+    mine(difficulty) {
+      while(true) {
+        this.hash = this.computedHash()
+        if( this.hash.substring(0, difficulty) !== this.getAnswer(difficulty) ) {
+          this.nonce++
+        } else {
+          break
+        }
+      }
+      console.log('挖到旷了', this.hash)
     }
 }
 
 class Chain{
     constructor() {
         this.chain = [this.bigBang()]
+        this.difficulty = 4
     }
 
     // 第一个区块
@@ -32,6 +54,8 @@ class Chain{
         const lastBlock = this.getLastBlock()
         block.hash = block.computedHash()
         block.previousHash = lastBlock.hash
+        // 根据挖矿难度计算
+        block.mine(this.difficulty)
         this.chain.push(block)
     }
 
@@ -62,7 +86,6 @@ class Chain{
     }
 }
 const block1 = new Block('1', null)
-// console.log(block1);
 const chain = new Chain()
 
 const block2 = new Block('2', null)
@@ -70,10 +93,8 @@ const block3 = new Block('3', null)
 chain.addBlockToChain(block2)
 chain.addBlockToChain(block3)
 
-console.log(chain.chain);
+// chain.chain[1].data = 123
+// chain.chain[1].hash = chain.chain[1].computedHash()
 
-chain.chain[1].data = 123
-chain.chain[1].hash = chain.chain[1].computedHash()
-
-console.log(chain.validateChain());
+// console.log(chain.validateChain());
 
