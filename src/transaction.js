@@ -1,14 +1,26 @@
 const sha256 = require('crypto-js/sha256')
+
+class Transaction {
+  constructor(from, to, amount) {
+    this.from = from
+    this.to = to
+    this.amount = amount
+  }
+} 
+
 class Block {
-    constructor(data, previousHash) {
-      this.data = data || 'please fill in data'
+    // data -> transaction <-> array of objects
+    constructor(transaction, previousHash) {
+      this.transaction = transaction || 'please fill in data'
+      this.timestamp = Date.now()
       this.previousHash = previousHash || null
       this.hash = this.computedHash()
       this.nonce = 1
     }
 
     computedHash() {
-      return sha256(this.data + this.previousHash + this.nonce).toString()
+      // transaction 需要 stringify
+      return sha256(JSON.stringify(this.transaction) + this.previousHash + this.nonce + this.timestamp).toString()
     }
 
     getAnswer(difficulty) {
@@ -36,6 +48,8 @@ class Block {
 class Chain{
     constructor() {
         this.chain = [this.bigBang()]
+        this.transactionPool = []
+        this.minerReward = 50
         this.difficulty = 4
     }
 
@@ -59,6 +73,34 @@ class Chain{
         this.chain.push(block)
     }
 
+    
+    addTransaction(transaction) {
+      this.transactionPool.push(transaction);
+    }
+
+    mineTransactionPool(minerRewardAddress) {
+      // 发放矿工奖励
+      const minerRewardTransaction = new Transaction(
+        null,
+        minerRewardAddress,
+        this.minerReward
+      )
+      this.transactionPool.push(minerRewardTransaction)
+      
+      // 挖矿
+      const newBlock = new Block(
+        this.transactionPool,
+        this.getLastBlock().hash
+      )
+      newBlock.mine(this.difficulty)
+
+       // 添加区块到区块链
+      this.chain.push(newBlock)
+
+       // 清空 transaction Pool
+       this.transactionPool = []
+
+    }
     // 验证区块链是否被篡改
     // 验证当前内容是否被篡改
     validateChain() {
@@ -85,16 +127,18 @@ class Chain{
         return true
     }
 }
-const block1 = new Block('1', null)
+const transaction1 = new Transaction('address1', 'address2', 10)
+const transaction2 = new Transaction('address2', 'address1', 5)
+
 const chain = new Chain()
 
-const block2 = new Block('2', null)
-const block3 = new Block('3', null)
-chain.addBlockToChain(block2)
-chain.addBlockToChain(block3)
+// const block1 = new Block(transaction, null)
+// chain.addBlockToChain(block1)
 
-// chain.chain[1].data = 123
-// chain.chain[1].hash = chain.chain[1].computedHash()
+chain.addTransaction(transaction1)
+chain.addTransaction(transaction2)
+chain.mineTransactionPool('user')
 
-// console.log(chain.validateChain());
 
+console.log(chain.chain[1]);
+console.log(chain.chain[1].transaction);
