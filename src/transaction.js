@@ -73,7 +73,6 @@ class Chain{
         this.chain.push(block)
     }
 
-    
     addTransaction(transaction) {
       this.transactionPool.push(transaction);
     }
